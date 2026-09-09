@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C/C++ extensions
+build/
+dist/
+*.egg-info/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Environment Variables & Credentials
+.env
+.env.*
+!.env.example
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Ultralytics base downloaded models
+yolo*.pt
+!runs/**/weights/*.pt
+*.onnx
+*.engine
+
+# Temporary files & Logs
+*.log
+temp/
+tmp/
+
+# Datasets (thư mục dữ liệu lớn không đưa lên git)
+datasets/
+data/
