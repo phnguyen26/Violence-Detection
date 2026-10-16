@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import './App.css'
 import type { Detection, Page, PairingSession, SessionState } from './types'
-import { API_BASE, VIOLENCE_KEYWORDS, WS_BASE, WS_URL } from './constants'
+import { API_BASE, VIOLENCE_KEYWORDS, WS_BASE } from './constants'
 import { Sidebar } from './components/Sidebar'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -9,12 +9,15 @@ import { AddDevicePage } from './pages/AddDevicePage'
 import { MonitorPage } from './pages/MonitorPage'
 import { CameraPage } from './pages/CameraPage'
 import { DeviceJoinPage } from './pages/DeviceJoinPage'
+import { useAuth } from './hooks/useAuth'
 
 export default function App() {
   const cameraRoute = window.location.pathname.startsWith('/camera/')
   const deviceRoute = window.location.pathname === '/device'
 
-  const [page, setPage] = useState<Page>('login')
+  const { user, loading: authLoading, signInGoogle, signOut } = useAuth()
+
+  const [page, setPage] = useState<Page>('dashboard')
   const [session, setSession] = useState<PairingSession | null>(null)
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [sessionError, setSessionError] = useState('')
@@ -213,26 +216,43 @@ export default function App() {
     window.setTimeout(() => setCopied(false), 1600)
   }
 
-
   // --- Routes ---
   if (cameraRoute) return <CameraPage />
   if (deviceRoute) return <DeviceJoinPage />
-  if (page === 'login') return <LoginPage onLogin={() => setPage('dashboard')} />
+
+  // Wait for Firebase to restore the persisted auth session.
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '12px', color: 'var(--muted, #888)' }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" style={{ animation: 'spin 1s linear infinite' }}>
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="32" strokeDashoffset="10" />
+        </svg>
+        Loading…
+      </div>
+    )
+  }
+
+  // Not logged in — show Google Sign-In
+  if (!user) {
+    return <LoginPage onSignInGoogle={signInGoogle} />
+  }
 
   return (
     <div className="app-shell">
       <Sidebar
         page={page}
         setPage={setPage}
-        onLogout={() => {
-          void stopPairing()
-          setPage('login')
+        onLogout={async () => {
+          await stopPairing()
+          await signOut()
         }}
         sessionState={sessionState}
+        user={user}
       />
       <main className="main-content">
         {page === 'dashboard' ? (
           <DashboardPage
+            displayName={user.displayName?.split(' ')[0] ?? 'there'}
             videoRef={videoRef}
             remoteStream={remoteStream}
             serverFrame={serverFrame}

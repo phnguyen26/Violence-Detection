@@ -7,7 +7,7 @@ export function Brand() {
         <ShieldCheck size={18} />
       </span>
       <span>
-        ez<span>viz</span>
+        De<span>tex</span>
       </span>
     </div>
   )
