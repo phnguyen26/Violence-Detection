@@ -1,24 +1,38 @@
 import { Bell, Camera, ChevronDown, Home, LayoutGrid, LogOut, Plus, ShieldCheck } from 'lucide-react'
 import { Brand } from './Brand'
 import type { Page, SessionState } from '../types'
+import type { User } from 'firebase/auth'
 
 interface SidebarProps {
   page: Page
   setPage: (page: Page) => void
   onLogout: () => void
   sessionState?: SessionState
+  user?: User | null
 }
 
-export function Sidebar({ page, setPage, onLogout, sessionState }: SidebarProps) {
+export function Sidebar({ page, setPage, onLogout, sessionState, user }: SidebarProps) {
+  const displayName = user?.displayName ?? user?.email ?? 'Account'
+  const initial = displayName.charAt(0).toUpperCase()
+  const photoURL = user?.photoURL
+
   return (
     <aside className="sidebar">
       <Brand />
 
       <div className="home-switcher">
-        <span className="home-avatar">H</span>
+        {photoURL ? (
+          <img
+            src={photoURL}
+            alt={displayName}
+            style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+          />
+        ) : (
+          <span className="home-avatar">{initial}</span>
+        )}
         <span>
-          <strong>Henderson Home</strong>
-          <small>Personal account</small>
+          <strong>{displayName}</strong>
+          <small>{user?.email ?? 'Personal account'}</small>
         </span>
         <ChevronDown size={15} />
       </div>
@@ -71,7 +85,7 @@ export function Sidebar({ page, setPage, onLogout, sessionState }: SidebarProps)
                   ? 'Waiting for Phone...'
                   : 'Protected'}
             </strong>
-            <small>YOLO Pure WebSocket</small>
+            <small>Firebase Auth + YOLO</small>
           </span>
         </div>
         <button className="nav-link" onClick={onLogout}>
