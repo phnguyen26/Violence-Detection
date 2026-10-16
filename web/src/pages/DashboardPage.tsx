@@ -17,6 +17,7 @@ import { devices } from '../constants'
 import type { Detection, SessionState } from '../types'
 
 interface DashboardPageProps {
+  displayName: string
   videoRef: RefObject<HTMLVideoElement | null>
   remoteStream: MediaStream | null
   serverFrame: string
@@ -28,6 +29,7 @@ interface DashboardPageProps {
 }
 
 export function DashboardPage({
+  displayName,
   videoRef,
   remoteStream,
   serverFrame,
@@ -56,7 +58,7 @@ export function DashboardPage({
       <header className="page-header">
         <div>
           <p className="eyebrow">REAL-TIME SECURITY MONITORING</p>
-          <h1>Hello, Jordan.</h1>
+          <h1>Hello, {displayName}.</h1>
           <p className="muted">Automated AI violence detection with high-speed video streaming (30+ FPS).</p>
         </div>
         <div className="header-actions">

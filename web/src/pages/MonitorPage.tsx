@@ -1,4 +1,4 @@
-import { ChevronRight, Smartphone, Video, VideoOff, Wifi } from 'lucide-react'
+import { ChevronRight, Smartphone, Wifi } from 'lucide-react'
 import { useEffect, type RefObject } from 'react'
 import type { Detection, SessionState } from '../types'
 
