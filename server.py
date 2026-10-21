@@ -365,8 +365,8 @@ async def signaling(ws: WebSocket, session_id: str):
         pass
     finally:
         if role == "camera":
-            session.camera_socket = None and session.camera_socket is ws
-        elif role == "viewer":
+            session.camera_socket = None 
+        else :
             session.viewer_sockets.pop(viewer_id, None)
             if session.camera_socket:
                 await _send(session.camera_socket, {"type": "viewer_left", "viewer_id": viewer_id})
@@ -424,7 +424,7 @@ async def frames(ws: WebSocket, session_id: str):
         try:
             if model is None:
                 return
-            async with model_lock:
+            async with model_lock: #multiple camera streams can share the same model, but only one can run inference at a time
                 results = await asyncio.to_thread(model.predict, frame, conf=0.35, verbose=False)
             confirmed = session.inference_buffer.update(yolo_result_to_raw(results[0]))
             detections = [
@@ -481,7 +481,7 @@ async def frames(ws: WebSocket, session_id: str):
             frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
             if frame is not None and not session.inference_busy:
                 session.inference_busy = True
-                asyncio.create_task(infer(frame.copy(), frame_idx))
+                asyncio.create_task(infer(frame.copy(), frame_idx)) #fire-and-forget, continue receiving next frame
             frame_idx += 1
     except WebSocketDisconnect:
         pass
