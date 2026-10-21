@@ -38,7 +38,7 @@ export function LoginPage({ onSignInGoogle }: LoginPageProps) {
           <p>Simple, secure monitoring for every corner of your home.</p>
         </div>
         <div className="art-status">
-          <span className="status-dot" /> All systems operational <span>•</span> 24/7 protection
+          <span className="status-dot" /> Sign in to manage your cameras
         </div>
       </div>
 
@@ -78,14 +78,14 @@ export function LoginPage({ onSignInGoogle }: LoginPageProps) {
             </button>
           </form>
 
-          <p className="signup-copy" style={{ marginTop: '24px' }}>
+          {/* <p className="signup-copy" style={{ marginTop: '24px' }}>
             Your account is secured by Google Sign-In.
             <br />
             <span style={{ opacity: 0.5 }}>No password stored on our servers.</span>
-          </p>
+          </p> */}
         </div>
 
-        <p className="legal-copy">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+        {/* <p className="legal-copy">By continuing, you agree to our Terms of Service and Privacy Policy.</p> */}
       </section>
     </main>
   )
