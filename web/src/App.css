@@ -100,6 +100,41 @@ button:active {
   background: var(--bg-app);
 }
 
+.feed-stage { aspect-ratio: 4 / 3; }
+.feed-stage > video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: fill; display: block;
+}
+.feed-stage .offline-message { z-index: 1; }
+.web-alert {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 20px; margin-bottom: 24px; border-radius: 12px;
+  background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+}
+.web-alert button { font-weight: 700; color: #991b1b; }
+.device-form { display: grid; gap: 14px; margin-top: 18px; }
+.device-form label, .alert-filters label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.device-form input, .alert-filters input, .alert-filters select, .monitor-page select {
+  padding: 10px 12px; border: 1px solid var(--border-medium); border-radius: 8px;
+  background: #fff; color: var(--ink-primary); font: inherit;
+}
+.device-form .primary-button { width: fit-content; }
+.pairing-box { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 22px; }
+.pairing-box code { overflow-wrap: anywhere; }
+.alert-filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.alert-list { display: grid; gap: 16px; }
+.alert-record {
+  display: flex; gap: 20px; padding: 16px; border: 1px solid var(--border-subtle);
+  border-radius: 14px; background: #fff;
+}
+.alert-record img { width: 240px; max-width: 40%; aspect-ratio: 4 / 3; object-fit: contain; background: #111; border-radius: 8px; }
+.alert-record p { color: var(--ink-muted); }
+.alert-record .secondary-button { margin-top: 14px; }
+@media (max-width: 640px) {
+  .alert-record { flex-direction: column; }
+  .alert-record img { max-width: 100%; width: 100%; }
+}
+
 .main-content {
   flex: 1;
   width: min(1280px, 100%);
@@ -1842,4 +1877,14 @@ button:active {
   .metric-row {
     gap: 24px;
   }
+}
+
+.mobile-nav { display: flex; align-items: center; gap: 14px; }
+.mobile-nav button { color: var(--ink-secondary); }
+.monitor-stage.feed-stage { aspect-ratio: 4 / 3; min-height: 0; }
+.monitor-stage.feed-stage > video { object-fit: fill; }
+.camera-image.feed-stage { aspect-ratio: 4 / 3; }
+.monitor-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+@media (max-width: 560px) {
+  .mobile-header { flex-wrap: wrap; gap: 16px; }
 }
