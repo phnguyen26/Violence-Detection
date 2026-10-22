@@ -495,13 +495,20 @@ async def frames(ws: WebSocket, session_id: str):
 @app.on_event("startup")
 def startup():
     global db, model
-    credential_path = os.getenv("FIREBASE_SERVICE_ACCOUNT", "detex.json")
-    if Path(credential_path).exists():
-        cred = credentials.Certificate(credential_path)
+    # Hugging Face Spaces
+    raw_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    if raw_json:
+        import json
+        cred = credentials.Certificate(json.loads(raw_json))
+    # Local dev
     else:
-        cred = credentials.ApplicationDefault()
+        credential_path = os.getenv("FIREBASE_SERVICE_ACCOUNT", "detex.json")
+        if Path(credential_path).exists():
+            cred = credentials.Certificate(credential_path)
+        else:
+            cred = credentials.ApplicationDefault()
     try:
-        firebase_admin.get_app()  #server reload when dev
+        firebase_admin.get_app()  # guard against double-init on dev reload
     except ValueError:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
