@@ -11,5 +11,5 @@ echo "Starting Detex server on port ${PORT:-7860}..."
 exec python server.py \
   --host "${HOST}" \
   --port "${PORT}" \
-  --weights "${}" \
+  --weights "${WEIGHTS}" \
   --no-ssl

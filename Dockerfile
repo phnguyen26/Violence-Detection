@@ -32,8 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 COPY postprocess.py server.py ./
-COPY best.pt ./best.pt
-COPY runs.sh ./
+COPY best.pt ./
+COPY run.sh ./
 # -R for dir
 RUN chown -R appuser /app
 USER appuser
@@ -49,4 +49,4 @@ ENV PORT=7860 \
 
 RUN chmod +x run.sh
 
-CMD ["./start.sh"]
+CMD ["./run.sh"]
