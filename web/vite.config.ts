@@ -5,17 +5,16 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
-    allowedHosts: ['committee-gst-occur-col.trycloudflare.com'],
-    hmr: {
-      protocol: 'wss',
-      host: 'committee-gst-occur-col.trycloudflare.com',
-      clientPort: 443,
-    },
     proxy: {
-      '/api': 'http://localhost:8765',
+      '/api': {
+        target: 'https://phnguyencs-violence-detection.hf.space',
+        changeOrigin: true,
+      },
       '/ws': {
-        target: 'ws://localhost:8765',
+        target: 'https://phnguyencs-violence-detection.hf.space',
         ws: true,
+        changeOrigin: true,
+        secure: true
       },
     },
   },
