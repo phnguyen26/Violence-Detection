@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://phnguyencs-violence-detection.hf.space',
+        target: 'localhost:8765',
         changeOrigin: true,
       },
       '/ws': {
