@@ -11,7 +11,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/ws': {
-        target: 'https://phnguyencs-violence-detection.hf.space',
+        target: 'localhost:8765',
         ws: true,
         changeOrigin: true,
         secure: true
