@@ -32,12 +32,12 @@ ALERT_COOLDOWN_SECONDS = float(os.getenv("ALERT_COOLDOWN_SECONDS", "30"))
 VIOLENCE_CLASSES = ("violence")
 
 app = FastAPI(title="Detex API")
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=os.getenv("CORS_ORIGINS").split(","),
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 model: YOLO | None = None
 model_lock = asyncio.Lock()          #**************
 db = None
