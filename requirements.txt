@@ -4,3 +4,7 @@ firebase-admin
 numpy
 opencv-python-headless
 ultralytics
+onnx 
+onnxslim 
+tensorrt
+onnxruntime-gpu

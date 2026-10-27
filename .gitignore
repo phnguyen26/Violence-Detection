@@ -9,6 +9,7 @@ node_modules
 runs
 weights
 *.onnx
+local*
 cert*
 mobile
 
