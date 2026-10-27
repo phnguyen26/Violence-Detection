@@ -25,9 +25,9 @@ from postprocess import TemporalBuffer, draw_confirmed, yolo_result_to_raw
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-DEFAULT_WEIGHTS = "best.pt"
+DEFAULT_WEIGHTS = "best.engine"
 VIOLENCE_THRESHOLD = float(os.getenv("VIOLENCE_THRESHOLD", "0.6"))
-VIOLENCE_SECONDS = float(os.getenv("VIOLENCE_SECONDS", "3"))
+# VIOLENCE_SECONDS = float(os.getenv("VIOLENCE_SECONDS", "3"))
 ALERT_COOLDOWN_SECONDS = float(os.getenv("ALERT_COOLDOWN_SECONDS", "30"))
 VIOLENCE_CLASSES = ("violence")
 
@@ -449,11 +449,7 @@ async def frames(ws: WebSocket, session_id: str):
             ]
             now = time.monotonic()
             if violence:
-                if session.violence_since is None:
-                    session.violence_since = now
-                if now - session.violence_since >= VIOLENCE_SECONDS and (
-                    now - session.last_alert_at >= ALERT_COOLDOWN_SECONDS
-                ):
+                if (now - session.last_alert_at >= ALERT_COOLDOWN_SECONDS):
                     session.last_alert_at = now
                     alert = await asyncio.to_thread(_save_alert, session, frame, violence)
                     for viewer in list(session.viewer_sockets.values()):
@@ -464,8 +460,6 @@ async def frames(ws: WebSocket, session_id: str):
                             "timestamp": alert["timestamp"],
                             "confidence": alert["confidence"],
                         }})
-            else:
-                session.violence_since = None
         except Exception:
             log.exception("Inference failed for camera %s", session.device_id)
         finally:
@@ -514,6 +508,7 @@ def startup():
     db = firestore.client()
     weights = getattr(app.state, "weights", DEFAULT_WEIGHTS)
     model = YOLO(weights)
+    log.info("Model loaded: %s", weights)
     log.info("Firebase and YOLO ready")
 
 
