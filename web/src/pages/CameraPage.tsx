@@ -103,7 +103,7 @@ export function CameraPage() {
             canvas.toBlob((blob) => {
               if (blob && frames?.readyState === WebSocket.OPEN) frames.send(blob)
             }, 'image/jpeg', 0.7)
-          }, 50) //20fps
+          }, 100) // 10fps
         }
         frames.onclose = () => {
           if (!stopped && signal?.readyState === WebSocket.OPEN) signal.close()

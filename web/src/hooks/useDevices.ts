@@ -45,7 +45,9 @@ export function useDevices(uid: string | undefined) {
             if (!message.camera_connected) {
               connection.peer?.close()
               connection.peer = null
-              patch(device.device_id, { state: 'offline', stream: null, detections: [], violenceDetected: false })
+              patch(device.device_id, {
+                state: 'offline', stream: null, frameJpeg: null, detections: [], violenceDetected: false,
+              })
             } else {
               patch(device.device_id, { state: 'online' })
             }
@@ -84,6 +86,7 @@ export function useDevices(uid: string | undefined) {
               detections,
               frameWidth: message.data.width,
               frameHeight: message.data.height,
+              frameJpeg: message.data.frame_jpeg ?? null,
               violenceDetected: detections.some((box) => VIOLENCE_KEYWORDS.some(
                 (word) => box.class.toLowerCase().includes(word),
               )),
@@ -98,7 +101,7 @@ export function useDevices(uid: string | undefined) {
         if (activeConnections.get(device.device_id) === connection) {
           activeConnections.delete(device.device_id)
           connection.peer?.close()
-          patch(device.device_id, { stream: null, state: 'offline' })
+          patch(device.device_id, { stream: null, frameJpeg: null, state: 'offline' })
         }
       }
     }

@@ -29,7 +29,10 @@ DEFAULT_WEIGHTS = "best.engine"
 VIOLENCE_THRESHOLD = float(os.getenv("VIOLENCE_THRESHOLD", "0.6"))
 # VIOLENCE_SECONDS = float(os.getenv("VIOLENCE_SECONDS", "3"))
 ALERT_COOLDOWN_SECONDS = float(os.getenv("ALERT_COOLDOWN_SECONDS", "30"))
-VIOLENCE_CLASSES = ("violence")
+FRAME_TIMEOUT_SECONDS = float(os.getenv("FRAME_TIMEOUT_SECONDS", "15"))
+INFERENCE_BATCH_SIZE = max(1, int(os.getenv("INFERENCE_BATCH_SIZE", "4")))
+FRAME_QUEUE_SIZE = max(INFERENCE_BATCH_SIZE, int(os.getenv("FRAME_QUEUE_SIZE", "12")))
+VIOLENCE_CLASSES = ("violence",)
 
 app = FastAPI(title="Detex API")
 app.add_middleware(
@@ -55,7 +58,11 @@ class Session:
     )
     violence_since: float | None = None
     last_alert_at: float = 0
-    inference_busy: bool = False
+    frame_queue: asyncio.Queue[tuple[np.ndarray, int]] = field(
+        default_factory=lambda: asyncio.Queue(maxsize=FRAME_QUEUE_SIZE)
+    )
+    inference_task: asyncio.Task[None] | None = None
+    last_frame_at: float | None = None
 
 
 sessions: dict[str, Session] = {}
@@ -109,12 +116,18 @@ def _ensure_session(device_id: str) -> Session:
 
 def _public_device(device_id: str, device: dict) -> dict:
     session = device_sessions.get(device_id)
+    frame_active = bool(
+        session
+        and session.frame_socket
+        and session.last_frame_at is not None
+        and time.monotonic() - session.last_frame_at <= FRAME_TIMEOUT_SECONDS
+    )
     return {
         "device_id": device_id,
         "name": device.get("name", "Camera"),
         "location": device.get("location", ""),
         "session_id": session.session_id if session else None,
-        "state": "online" if session and session.camera_socket else "offline",
+        "state": "online" if frame_active else "offline",
     }
 
 
@@ -289,9 +302,14 @@ async def _send(ws: WebSocket, payload: dict) -> None:
 
 
 async def _state(session: Session) -> None:
+    frame_active = bool(
+        session.frame_socket
+        and session.last_frame_at is not None
+        and time.monotonic() - session.last_frame_at <= FRAME_TIMEOUT_SECONDS
+    )
     payload = {
         "type": "session_state",
-        "camera_connected": session.camera_socket is not None,
+        "camera_connected": frame_active,
         "viewer_count": len(session.viewer_sockets),
     }
     for socket in [*session.viewer_sockets.values(), session.camera_socket]:
@@ -418,40 +436,55 @@ async def frames(ws: WebSocket, session_id: str):
         await ws.close(code=4409)
         return
     session.frame_socket = ws
+    await _state(session)
     frame_idx = 0
 
-    async def infer(frame: np.ndarray, index: int):
+    async def infer_batch(batch: list[tuple[np.ndarray, int]]) -> None:
         try:
             if model is None:
                 return
-            async with model_lock: #multiple camera streams can share the same model, but only one can run inference at a time
-                results = await asyncio.to_thread(model.predict, frame, conf=0.35, verbose=False)
-            confirmed = session.inference_buffer.update(yolo_result_to_raw(results[0]))
-            detections = [
-                {
-                    "class": box.cls_name,
-                    "conf": round(box.conf_ema, 3),
-                    "bbox": [round(float(v), 1) for v in box.xyxy_ema],
-                }
-                for box in confirmed
-            ]
-            for viewer in list(session.viewer_sockets.values()):
-                await _send(viewer, {"type": "detections", "data": {
-                    "frame": index,
-                    "width": frame.shape[1],
-                    "height": frame.shape[0],
-                    "detections": detections,
-                }})
-            violence = [
-                box for box in confirmed
-                if box.conf_ema >= VIOLENCE_THRESHOLD
-                and any(word in box.cls_name.lower() for word in VIOLENCE_CLASSES)
-            ]
-            now = time.monotonic()
-            if violence:
-                if (now - session.last_alert_at >= ALERT_COOLDOWN_SECONDS):
+            frames = [frame for frame, _ in batch]
+            async with model_lock:
+                results = await asyncio.to_thread(
+                    model.predict, frames, conf=0.35, verbose=False
+                )
+            for (frame, index), result in zip(batch, results):
+                confirmed = session.inference_buffer.update(yolo_result_to_raw(result))
+                detections = [
+                    {
+                        "class": box.cls_name,
+                        "conf": round(box.conf_ema, 3),
+                        "bbox": [round(float(v), 1) for v in box.xyxy_ema],
+                    }
+                    for box in confirmed
+                ]
+                frame_jpeg = None
+                if session.viewer_sockets:
+                    ok, enc = cv2.imencode(
+                        ".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 55]
+                    )
+                    if ok:
+                        frame_jpeg = base64.b64encode(enc.tobytes()).decode("ascii")
+
+                for viewer in list(session.viewer_sockets.values()):
+                    await _send(viewer, {"type": "detections", "data": {
+                        "frame": index,
+                        "width": frame.shape[1],
+                        "height": frame.shape[0],
+                        "detections": detections,
+                        "frame_jpeg": frame_jpeg,
+                    }})
+                violence = [
+                    box for box in confirmed
+                    if box.conf_ema >= VIOLENCE_THRESHOLD
+                    and any(word in box.cls_name.lower() for word in VIOLENCE_CLASSES)
+                ]
+                now = time.monotonic()
+                if violence and now - session.last_alert_at >= ALERT_COOLDOWN_SECONDS:
                     session.last_alert_at = now
-                    alert = await asyncio.to_thread(_save_alert, session, frame, violence)
+                    alert = await asyncio.to_thread(
+                        _save_alert, session, frame, violence
+                    )
                     for viewer in list(session.viewer_sockets.values()):
                         await _send(viewer, {"type": "alert", "data": {
                             "id": alert["id"],
@@ -462,28 +495,63 @@ async def frames(ws: WebSocket, session_id: str):
                         }})
         except Exception:
             log.exception("Inference failed for camera %s", session.device_id)
-        finally:
-            session.inference_busy = False
+
+    async def inference_worker() -> None:
+        while True:
+            first = await session.frame_queue.get()
+            batch = [first]
+            while len(batch) < INFERENCE_BATCH_SIZE:
+                try:
+                    batch.append(session.frame_queue.get_nowait())
+                except asyncio.QueueEmpty:
+                    break
+            await infer_batch(batch)
+            for _ in batch:
+                session.frame_queue.task_done()
+
+    session.inference_task = asyncio.create_task(inference_worker())
 
     try:
         while True:
             if session.frame_socket is not ws:
                 break
-            data = await ws.receive_bytes()
+            data = await asyncio.wait_for(
+                ws.receive_bytes(), timeout=FRAME_TIMEOUT_SECONDS
+            )
             if len(data) > 2_000_000:
                 continue
             frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
-            if frame is not None and not session.inference_busy:
-                session.inference_busy = True
-                asyncio.create_task(infer(frame.copy(), frame_idx)) #fire-and-forget, continue receiving next frame
+            if frame is not None:
+                session.last_frame_at = time.monotonic()
+                item = (frame.copy(), frame_idx)
+                if session.frame_queue.full():
+                    try:
+                        session.frame_queue.get_nowait()
+                        session.frame_queue.task_done()
+                    except asyncio.QueueEmpty:
+                        pass
+                session.frame_queue.put_nowait(item)
             frame_idx += 1
+    except asyncio.TimeoutError:
+        log.info("Frame stream timed out for camera %s", session.device_id)
     except WebSocketDisconnect:
         pass
     finally:
         if session.frame_socket is ws:
             session.frame_socket = None
             session.violence_since = None
+            session.last_frame_at = None
             session.inference_buffer = TemporalBuffer(window=8, min_hits=3, ema_alpha=0.4)
+            if session.inference_task:
+                session.inference_task.cancel()
+                session.inference_task = None
+            while not session.frame_queue.empty():
+                try:
+                    session.frame_queue.get_nowait()
+                    session.frame_queue.task_done()
+                except asyncio.QueueEmpty:
+                    break
+            await _state(session)
 
 
 @app.on_event("startup")

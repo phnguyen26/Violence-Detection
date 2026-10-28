@@ -8,6 +8,7 @@ export type CameraDevice = {
   state: 'online' | 'offline'
   stream?: MediaStream | null
   detections?: Detection[]
+  frameJpeg?: string | null
   frameWidth?: number
   frameHeight?: number
   violenceDetected?: boolean
