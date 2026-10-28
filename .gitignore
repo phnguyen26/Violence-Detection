@@ -6,7 +6,6 @@ __pycache__
 data
 node_modules
 
-runs
 weights
 *.onnx
 local*

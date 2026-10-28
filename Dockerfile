@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 COPY postprocess.py server.py ./
-COPY best.pt ./
+COPY best.engine ./
 COPY run.sh ./
 # -R for dir
 RUN chown -R appuser /app

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="740" viewBox="0 0 1280 740" role="img" aria-labelledby="title desc">
+  <title id="title">Detex — Workflow</title>
+  <desc id="desc">Viewer tạo camera qua API device register trên Hugging Face Space và đưa link QR cho điện thoại. Điện thoại đăng ký bằng camera token để lấy session, truyền video WebRTC tới viewer và gửi frame qua WebSocket tới Space. Space xử lý YOLO, trao đổi signaling và gửi kết quả cùng cảnh báo tới viewer.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 9 4.5 0 9Z" fill="context-stroke"/></marker>
+    <style>
+      text { font-family: Inter, 'Segoe UI', Arial, sans-serif; }
+      .title { font-size: 30px; font-weight: 750; fill: #0f172a; }
+      .heading { font-size: 23px; font-weight: 700; fill: #0f172a; }
+      .body { font-size: 16px; fill: #475569; }
+      .label { font-size: 15px; font-weight: 600; }
+      .edge { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; marker-end: url(#arrow); }
+      .blue { stroke: #2563eb; }
+      .green { stroke: #059669; }
+      .purple { stroke: #7c3aed; }
+      .icon { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+  <rect width="1280" height="740" rx="24" fill="#f8fafc"/>
+  <text x="60" y="62" class="title">Detex · Workflow</text>
+  <text x="60" y="93" class="body">Đăng ký camera → xem trực tiếp → phát hiện bạo lực</text>
+
+  <!-- Browser clients -->
+  <rect x="80" y="140" width="330" height="150" rx="20" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <g class="icon" stroke="#2563eb"><rect x="107" y="169" width="38" height="27" rx="4"/><path d="M126 196v9m-11 0h22"/></g>
+  <text x="165" y="191" class="heading">Viewer</text>
+  <text x="108" y="233" class="body">Web app · tạo và theo dõi camera</text>
+  <text x="108" y="261" class="body">Hiển thị video, bounding box, cảnh báo</text>
+
+  <rect x="870" y="140" width="330" height="150" rx="20" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.5"/>
+  <g class="icon" stroke="#059669"><rect x="899" y="163" width="24" height="40" rx="5"/><path d="M908 196h6"/></g>
+  <text x="943" y="191" class="heading">Phone Camera</text>
+  <text x="898" y="233" class="body">Mở link / QR · cấp quyền camera</text>
+  <text x="898" y="261" class="body">Camera trình duyệt trên điện thoại</text>
+
+  <path d="M410 176H870" class="edge blue"/>
+  <text x="640" y="164" text-anchor="middle" class="label" fill="#2563eb">2. Link / QR chứa camera token</text>
+  <path d="M870 249H410" class="edge green"/>
+  <text x="640" y="235" text-anchor="middle" class="label" fill="#059669">4. WebRTC · video trực tiếp</text>
+
+  <!-- Backend boundary; register is part of the Space -->
+  <rect x="60" y="410" width="1160" height="260" rx="22" fill="#fff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="81" y="394" width="264" height="34" rx="10" fill="#f8fafc"/>
+  <text x="99" y="419" class="heading">Hugging Face Space</text>
+
+  <rect x="100" y="468" width="390" height="156" rx="16" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="124" y="504" class="heading">API Device Register</text>
+  <text x="124" y="538" font-family="monospace" font-size="17" fill="#1d4ed8">POST /api/devices/register</text>
+  <text x="124" y="573" class="body">Tạo thiết bị / xác thực camera token</text>
+  <text x="124" y="600" class="body">Trả về session_id để kết nối</text>
+
+  <rect x="800" y="468" width="380" height="156" rx="16" fill="#f5f3ff" stroke="#ddd6fe"/>
+  <text x="824" y="504" class="heading">WebSocket + YOLO</text>
+  <text x="824" y="541" class="body">Signaling · thiết lập WebRTC</text>
+  <text x="824" y="570" class="body">Nhận frame → phát hiện bạo lực</text>
+  <text x="824" y="599" class="body">Trả detections và cảnh báo</text>
+
+  <path d="M170 290V468" class="edge blue" marker-start="url(#arrow)"/>
+  <rect x="80" y="326" width="180" height="55" rx="8" fill="#f8fafc"/>
+  <text x="170" y="347" text-anchor="middle" class="label" fill="#2563eb">1. Tạo camera</text>
+  <text x="170" y="370" text-anchor="middle" font-size="14" fill="#475569">Firebase ID token</text>
+
+  <path d="M940 290V368H380V468" class="edge blue" marker-start="url(#arrow)"/>
+  <rect x="444" y="347" width="400" height="39" rx="8" fill="#f8fafc"/>
+  <text x="644" y="372" text-anchor="middle" class="label" fill="#2563eb">3. Đăng ký bằng token → nhận session</text>
+
+  <path d="M1110 290V468" class="edge purple"/>
+  <rect x="1020" y="326" width="180" height="55" rx="8" fill="#f8fafc"/>
+  <text x="1110" y="347" text-anchor="middle" class="label" fill="#7c3aed">5. WebSocket</text>
+  <text x="1110" y="370" text-anchor="middle" font-size="14" fill="#475569">JPEG frames ~10 FPS</text>
+
+  <!-- Viewer control/results connection, routed outside the register path -->
+  <path d="M800 560H645V317H330V290" class="edge purple" marker-start="url(#arrow)"/>
+  <rect x="530" y="465" width="230" height="67" rx="10" fill="#fff"/>
+  <text x="645" y="488" text-anchor="middle" class="label" fill="#7c3aed">6. WebSocket</text>
+  <text x="645" y="513" text-anchor="middle" font-size="14" fill="#475569">Signaling · kết quả · cảnh báo</text>
+
+  <text x="640" y="709" text-anchor="middle" class="body">Video đi trực tiếp qua WebRTC; phân tích AI và signaling đi qua HF Space.</text>
+</svg>
