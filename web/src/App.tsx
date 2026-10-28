@@ -22,13 +22,24 @@ function CameraFeed({ device, monitor = false }: { device: CameraDevice; monitor
   }, [device.stream])
   const width = device.frameWidth ?? 640
   const height = device.frameHeight ?? 480
+  // Có stream WebRTC hoặc có frame JPEG relay từ simulator
+  const hasVideo = !!device.stream || !!device.frameJpeg
   return (
     <div className={monitor ? 'monitor-stage feed-stage' : 'camera-image feed-stage'}>
-      {device.stream ? <video ref={ref} autoPlay playsInline muted /> : (
-        <div className="offline-message"><Camera size={30} /><strong>Camera offline</strong>
-          <span>Open its link on the phone to start streaming.</span></div>
-      )}
-      {device.stream && device.detections?.map((box, index) => {
+      {device.stream
+        ? <video ref={ref} autoPlay playsInline muted />
+        : device.frameJpeg
+          ? <img
+              src={`data:image/jpeg;base64,${device.frameJpeg}`}
+              className="simulator-feed"
+              alt="camera feed"
+            />
+          : (
+            <div className="offline-message"><Camera size={30} /><strong>Camera offline</strong>
+              <span>Open its link on the phone to start streaming.</span></div>
+          )
+      }
+      {hasVideo && device.detections?.map((box, index) => {
         const [x1, y1, x2, y2] = box.bbox
         const violence = VIOLENCE_KEYWORDS.some((word) => box.class.toLowerCase().includes(word))
         return <div key={index} className={violence ? 'detection-box alert' : 'detection-box'} style={{
@@ -36,21 +47,22 @@ function CameraFeed({ device, monitor = false }: { device: CameraDevice; monitor
           width: `${(x2 - x1) / width * 100}%`, height: `${(y2 - y1) / height * 100}%`,
         }}><span>{box.class} {Math.round(box.conf * 100)}%</span></div>
       })}
-      {device.violenceDetected && device.stream && <div className="camera-alert">Violence detected</div>}
-      <div className="camera-image-top"><span className="live-tag"><i /> {device.stream ? 'LIVE' : 'OFFLINE'}</span></div>
+      {device.violenceDetected && hasVideo && <div className="camera-alert">Violence detected</div>}
+      <div className="camera-image-top"><span className="live-tag"><i /> {hasVideo ? 'LIVE' : 'OFFLINE'}</span></div>
     </div>
   )
 }
 
 function DeviceCard({ device, onOpen }: { device: CameraDevice; onOpen: () => void }) {
+  const isOnline = !!device.stream || !!device.frameJpeg || device.state === 'online'
   return <article className="camera-card">
     <div className="camera-card-head"><div className="camera-title">
-      <span className={`camera-status ${device.stream ? 'online' : ''}`} />
+      <span className={`camera-status ${isOnline ? 'online' : ''}`} />
       <span><strong>{device.name}</strong><small>{device.location || device.device_id}</small></span>
     </div></div>
     <CameraFeed device={device} />
     <div className="camera-card-foot"><span className="foot-location">
-      {device.stream ? `${device.detections?.length ?? 0} detections` : 'Waiting for camera'}
+      {isOnline ? `${device.detections?.length ?? 0} detections` : 'Waiting for camera'}
     </span><button className="view-button" onClick={onOpen}>Open monitor →</button></div>
   </article>
 }
@@ -180,7 +192,7 @@ export default function App() {
             {devices.map((device) => <option key={device.device_id} value={device.device_id}>{device.name}</option>)}
           </select></header>
         {selected ? <><CameraFeed device={selected} monitor />
-          <p className="muted">{selected.location || selected.device_id} · {selected.stream ? 'Live' : 'Offline'}</p>
+          <p className="muted">{selected.location || selected.device_id} · {selected.stream || selected.frameJpeg || selected.state === 'online' ? 'Live' : 'Offline'}</p>
           <div className="monitor-actions">
             <button className="secondary-button" onClick={() => void shareDevice(selected.device_id)}>Share pairing code</button>
             <button className="secondary-button" onClick={() => void resetCameraLink(selected.device_id)}>Reset phone link</button>

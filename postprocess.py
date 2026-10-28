@@ -1,9 +1,3 @@
-"""
-1. Flickering boxes  – a single-frame false positive causes a box to flash on/off.
-2. Jittery boxes     – box coordinates jump a few pixels every frame.
-3. Low-trust labels  – a 26 % detection gets drawn the same as a 90 % one.
-"""
-
 from __future__ import annotations
 
 from collections import deque
@@ -16,7 +10,6 @@ import numpy as np
 # Data classes
 @dataclass
 class RawDetection:
-    """One raw YOLO detection for a single frame."""
 
     cls_name: str
     conf: float
@@ -38,7 +31,7 @@ class TemporalBuffer:
     def __init__(
         self,
         window: int = 8,
-        min_hits: int = 4,
+        min_hits: int = 3,
         ema_alpha: float = 0.4,
         iou_thresh: float = 0.3,
     ) -> None:
@@ -56,12 +49,8 @@ class TemporalBuffer:
         return self.confirmed()
 
     def confirmed(self) -> list[SmoothedBox]:
-        """Return only boxes that have enough temporal support."""
         return [b for b in self._smoothed if b.hit_count >= self.min_hits]
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
     def _update_smoothed(self, new_dets: list[RawDetection]) -> None:
         matched_smooth_ids: set[int] = set()
         matched_det_ids: set[int] = set()
@@ -93,7 +82,6 @@ class TemporalBuffer:
                 matched_det_ids.add(di)
 
         # 2. Unmatched new detections → create new smoothed box.
-        #    Record their indices so step 3 does NOT penalise them.
         new_box_ids: set[int] = set()
         for di, det in enumerate(new_dets):
             if di not in matched_det_ids:
@@ -107,7 +95,6 @@ class TemporalBuffer:
                     )
                 )
 
-        # 3. Unmatched *existing* boxes → decay; brand-new boxes are left alone.
         survivors = []
         for si, sbox in enumerate(self._smoothed):
             if si not in matched_smooth_ids and si not in new_box_ids:
@@ -117,11 +104,7 @@ class TemporalBuffer:
         self._smoothed = survivors
 
 
-# ---------------------------------------------------------------------------
-# Drawing helper
-# ---------------------------------------------------------------------------
-# Colour map: green for non-violence, red for violence keywords
-_VIOLENCE_KEYWORDS = {"violence", "fight", "weapon", "assault", "attack"}
+_VIOLENCE_KEYWORDS = ("violence",)
 
 
 def _box_color(cls_name: str) -> tuple[int, int, int]:
@@ -136,10 +119,6 @@ def draw_confirmed(
     line_thickness: int = 2,
     font_scale: float = 0.6,
 ) -> np.ndarray:
-    """
-    Draw only temporally confirmed, EMA-smoothed boxes onto *frame* (in-place).
-    Opacity of the box scales with confidence so uncertain boxes look faint.
-    """
     overlay = frame.copy()
     for box in confirmed:
         x1, y1, x2, y2 = (int(v) for v in box.xyxy_ema)
@@ -171,9 +150,6 @@ def draw_confirmed(
     return frame
 
 
-# ---------------------------------------------------------------------------
-# Conversion helper
-# ---------------------------------------------------------------------------
 def yolo_result_to_raw(result) -> list[RawDetection]:
     names = result.names
     dets = []
@@ -188,9 +164,6 @@ def yolo_result_to_raw(result) -> list[RawDetection]:
     return dets
 
 
-# ---------------------------------------------------------------------------
-# IoU utility
-# ---------------------------------------------------------------------------
 def _iou(a: list[float], b: list[float]) -> float:
     ax1, ay1, ax2, ay2 = a
     bx1, by1, bx2, by2 = b
