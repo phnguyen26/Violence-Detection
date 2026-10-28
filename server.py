@@ -522,7 +522,13 @@ async def frames(ws: WebSocket, session_id: str):
                 continue
             frame = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
             if frame is not None:
+                was_frame_active = bool(
+                    session.last_frame_at is not None
+                    and time.monotonic() - session.last_frame_at <= FRAME_TIMEOUT_SECONDS
+                )
                 session.last_frame_at = time.monotonic()
+                if not was_frame_active:
+                    await _state(session)
                 item = (frame.copy(), frame_idx)
                 if session.frame_queue.full():
                     try:

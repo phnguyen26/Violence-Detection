@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Bell, Camera, Home, LogOut, Plus, ShieldCheck, Smartphone } from 'lucide-react'
+import { Bell, Camera, Home, LogOut, Plus, ShieldCheck, Smartphone, Volume2, VolumeX } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import './App.css'
 import { api } from './api'
@@ -11,6 +11,9 @@ import { AlertsPage } from './pages/AlertsPage'
 import { CameraPage } from './pages/CameraPage'
 import { LoginPage } from './pages/LoginPage'
 import type { CameraDevice, Page, RegisteredDevice } from './types'
+
+const ALERT_SOUND_COOLDOWN_MS = 30_000
+const ALERT_SOUND_SETTING = 'detex-alert-sound-enabled'
 
 function CameraFeed({ device, monitor = false }: { device: CameraDevice; monitor?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null)
@@ -71,6 +74,10 @@ export default function App() {
   const cameraRoute = window.location.pathname.startsWith('/camera/')
   const { user, loading, signInGoogle, signOut } = useAuth()
   const { devices, error, latestAlert, clearAlert, refresh } = useDevices(user?.uid)
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem(ALERT_SOUND_SETTING) !== 'false')
+  const alertAudio = useRef<HTMLAudioElement | null>(null)
+  const lastAlertId = useRef<string | null>(null)
+  const lastSoundAt = useRef(0)
   const [page, setPage] = useState<Page>('dashboard')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [registered, setRegistered] = useState<RegisteredDevice | null>(null)
@@ -81,6 +88,38 @@ export default function App() {
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
   const selected = devices.find((device) => device.device_id === selectedId) ?? devices[0]
+
+  useEffect(() => {
+    const audio = new Audio(`${import.meta.env.BASE_URL}danger-alarm-sound-effect-meme.mp3`)
+    audio.preload = 'auto'
+    alertAudio.current = audio
+    return () => {
+      audio.pause()
+      alertAudio.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!latestAlert || latestAlert.id === lastAlertId.current) return
+    lastAlertId.current = latestAlert.id
+    const now = Date.now()
+    if (!soundEnabled || now - lastSoundAt.current < ALERT_SOUND_COOLDOWN_MS) return
+    const audio = alertAudio.current
+    if (!audio) return
+    lastSoundAt.current = now
+    audio.currentTime = 0
+    void audio.play().catch(() => undefined)
+  }, [latestAlert, soundEnabled])
+
+  const toggleAlertSound = () => {
+    const next = !soundEnabled
+    setSoundEnabled(next)
+    localStorage.setItem(ALERT_SOUND_SETTING, String(next))
+    if (!next && alertAudio.current) {
+      alertAudio.current.pause()
+      alertAudio.current.currentTime = 0
+    }
+  }
 
   const createDevice = async (event: FormEvent) => {
     event.preventDefault()
@@ -148,6 +187,9 @@ export default function App() {
         <button className={page === 'dashboard' ? 'nav-link active' : 'nav-link'} onClick={() => setPage('dashboard')}><Home size={17} /> Overview</button>
         <button className={page === 'monitor' ? 'nav-link active' : 'nav-link'} onClick={() => setPage('monitor')}><Camera size={17} /> Live monitor</button>
         <button className={page === 'alerts' ? 'nav-link active' : 'nav-link'} onClick={() => { clearAlert(); setPage('alerts') }}><Bell size={17} /> Alerts {latestAlert && <span className="notification-dot" />}</button>
+        <button className="nav-link" type="button" onClick={toggleAlertSound} aria-label={soundEnabled ? 'Mute alert sound' : 'Enable alert sound'} aria-pressed={soundEnabled}>
+          {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />} Alert sound {soundEnabled ? 'on' : 'off'}
+        </button>
         <button className={page === 'add-device' ? 'nav-link active' : 'nav-link'} onClick={() => setPage('add-device')}><Plus size={17} /> Add camera</button>
       </nav>
       <div className="sidebar-bottom"><div className="security-note"><ShieldCheck size={18} /><span><strong>{devices.filter((d) => d.stream).length} cameras live</strong><small>Firebase + YOLO</small></span></div>
@@ -160,6 +202,9 @@ export default function App() {
           <button aria-label="Overview" onClick={() => setPage('dashboard')}><Home size={19} /></button>
           <button aria-label="Live monitor" onClick={() => setPage('monitor')}><Camera size={19} /></button>
           <button aria-label="Alerts" onClick={() => { clearAlert(); setPage('alerts') }}><Bell size={19} /></button>
+          <button aria-label={soundEnabled ? 'Mute alert sound' : 'Enable alert sound'} aria-pressed={soundEnabled} onClick={toggleAlertSound}>
+            {soundEnabled ? <Volume2 size={19} /> : <VolumeX size={19} />}
+          </button>
           <button aria-label="Add camera" onClick={() => setPage('add-device')}><Plus size={19} /></button>
           <button aria-label="Sign out" onClick={() => void signOut()}><LogOut size={19} /></button>
         </nav>
