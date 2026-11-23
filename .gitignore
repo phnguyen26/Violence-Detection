@@ -1,5 +1,4 @@
 web/.env
-web/.env.local
 
 __pycache__
 .vscode
@@ -19,3 +18,8 @@ detex.json
 *.nsys-rep
 *.sqlite
 test*
+
+!tests/
+!tests/**
+.env
+.ruff_cache/

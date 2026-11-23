@@ -8,7 +8,7 @@ WORKDIR /build
 #         libgl1 \
 #     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements.txt requirements-base.txt ./
 #install dependencies to /install (avoid polluting the system site-packages)
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
@@ -31,9 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 
-COPY postprocess.py server.py ./
+COPY server.py ./
+COPY src ./src
 COPY best.engine ./
-COPY run.sh ./
+COPY --chmod=+x run.sh ./
 # -R for dir
 RUN chown -R appuser /app
 USER appuser
@@ -44,9 +45,10 @@ ENV PORT=7860 \
     HOST=0.0.0.0 \
     WEIGHTS=best.engine \
     VIOLENCE_THRESHOLD=0.6 \
-    VIOLENCE_SECONDS=3 \
-    ALERT_COOLDOWN_SECONDS=30
-
-RUN chmod +x run.sh
-
-CMD ["./run.sh"]
+    ALERT_COOLDOWN_SECONDS=30 \
+    INFERENCE_BATCH_SIZE=2\
+    FRAME_QUEUE_SIZE=12\
+    FIREBASE_SERVICE_ACCOUNT=detex.json\
+    CORS_ORIGINS=http://localhost:8080\
+    VIOLENCE_THRESHOLD=0.6
+ENTRYPOINT ["./run.sh"]

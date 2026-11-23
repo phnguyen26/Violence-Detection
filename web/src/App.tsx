@@ -147,6 +147,7 @@ export default function App() {
     } finally { setBusy(false) }
   }
   const shareDevice = async (id: string) => {
+    setFormError('')
     try {
       const result = await api<{ pairing_code: string }>(
         `/api/devices/${encodeURIComponent(id)}/share-code`, { method: 'POST' },
@@ -159,6 +160,7 @@ export default function App() {
     }
   }
   const resetCameraLink = async (id: string) => {
+    setFormError('')
     try {
       const result = await api<{ camera_token: string }>(
         `/api/devices/${encodeURIComponent(id)}/camera-token`, { method: 'POST' },
@@ -225,7 +227,7 @@ export default function App() {
           <h2>All devices <span className="count-badge">{devices.length}</span></h2></div></section>
         <section className="camera-grid">
           {devices.map((device) => <DeviceCard key={device.device_id} device={device}
-            onOpen={() => { setSelectedId(device.device_id); setPage('monitor') }} />)}
+            onOpen={() => { setFormError(''); setSelectedId(device.device_id); setPage('monitor') }} />)}
           <button className="add-camera-card" onClick={() => setPage('add-device')}><span><Plus size={22} /></span>
             <strong>Add a camera</strong><small>Connect a phone or pair a shared camera</small></button>
         </section>
@@ -233,7 +235,10 @@ export default function App() {
       {page === 'monitor' && <section className="monitor-page">
         <header className="page-header"><div><p className="eyebrow">LIVE MONITOR</p>
           <h1>{selected?.name || 'No camera selected'}</h1></div>
-          <select value={selected?.device_id || ''} onChange={(event) => setSelectedId(event.target.value)}>
+          <select value={selected?.device_id || ''} onChange={(event) => {
+            setFormError('')
+            setSelectedId(event.target.value)
+          }}>
             {devices.map((device) => <option key={device.device_id} value={device.device_id}>{device.name}</option>)}
           </select></header>
         {selected ? <><CameraFeed device={selected} monitor />
@@ -242,6 +247,7 @@ export default function App() {
             <button className="secondary-button" onClick={() => void shareDevice(selected.device_id)}>Share pairing code</button>
             <button className="secondary-button" onClick={() => void resetCameraLink(selected.device_id)}>Reset phone link</button>
           </div>
+          {formError && <p className="session-error" role="alert">{formError}</p>}
         </> : <p className="muted">Add a camera to start monitoring.</p>}
       </section>}
       {page === 'add-device' && <section className="add-device-page">

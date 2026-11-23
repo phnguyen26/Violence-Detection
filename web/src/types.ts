@@ -24,4 +24,4 @@ export type Alert = {
   boxes: Detection[]
   acknowledged_by: string[]
 }
-export type RegisteredDevice = CameraDevice & { camera_token: string; pairing_code: string }
+export type RegisteredDevice = CameraDevice & { camera_token: string; pairing_code: string | null }

@@ -5,9 +5,7 @@ __pycache__/
 *.ipynb
 benchmark.py
 infer_video.py
-main.py
 
-web/
 
 runs/train/yolo26s-violence/weights/last.pt
 runs/detect/
@@ -18,3 +16,7 @@ runs/train/yolo26s-violence/*.yaml
 
 .git/
 .gitignore
+
+detex.json
+.env.*
+!.env.example
