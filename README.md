@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="runs/detex-workflow.svg" alt="Detex" width="80"/>
-</p>
 
 <h1 align="center">Detex</h1>
 <p align="center"><strong>Browser cameras → YOLO violence detection → real-time alerts. No extra hardware.</strong></p>
@@ -12,7 +9,7 @@
   <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue" alt="Python">
   <img src="https://img.shields.io/badge/react-19-61dafb" alt="React">
   <img src="https://img.shields.io/badge/TensorRT-11.4-76b900?logo=nvidia&logoColor=white" alt="TensorRT">
-  <a href="https://huggingface.co/spaces/phnguyen06/Violence-Detection"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow" alt="Hugging Face Space"></a>
+  <a href="https://huggingface.co/spaces/phnguyencs/Violence-Detection"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Space-yellow" alt="Hugging Face Space"></a>
 </p>
 
 ---
@@ -20,9 +17,13 @@
 ## Demo
 
 <p align="center">
-  <video src="demo.webm" width="720" controls>
-    Your browser does not support the video tag.
-  </video>
+  <video src="https://github.com/phnguyen26/Violence-Detection/releases/download/1.0/demo.webm" width="720" controls></video>
+ 
+  <!-- Option B: clickable thumbnail while video URL is not yet available -->
+  <!-- <a href="https://github.com/phnguyen06/Violence-Detection/raw/main/demo.webm">
+    <img src="web/src/assets/hero.png" alt="Demo — click to download/view video" width="720"/>
+  </a>
+  <br/><em>▶ Click to watch the demo</em> -->
 </p>
 
 ---
@@ -128,7 +129,9 @@ Browser (viewer)
       │  WebRTC video + detection overlay (WebSocket)
 ```
 
----
+<p align="center">
+  <img src="runs/detex-workflow.svg" alt="Detex" width="720"/>
+</p>
 
 <!-- ## Export Model
 
