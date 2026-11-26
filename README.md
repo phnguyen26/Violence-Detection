@@ -16,15 +16,11 @@
 
 ## Demo
 
-<p align="center">
-  <video src="https://github.com/phnguyen26/Violence-Detection/releases/download/1.0/demo.webm" width="720" controls></video>
- 
-  <!-- Option B: clickable thumbnail while video URL is not yet available -->
-  <!-- <a href="https://github.com/phnguyen06/Violence-Detection/raw/main/demo.webm">
-    <img src="web/src/assets/hero.png" alt="Demo — click to download/view video" width="720"/>
-  </a>
-  <br/><em>▶ Click to watch the demo</em> -->
-</p>
+
+
+https://github.com/user-attachments/assets/25d0a9ae-38e9-4ee2-b2de-f67b50765991
+
+
 
 ---
 
